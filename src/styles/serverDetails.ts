@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import { Server } from '../types/server';
-import { shimmer } from './animations';
 
 export const ServerHeader = styled.div`
   display: flex;
@@ -50,36 +49,19 @@ export const StatusBadge = styled.span<{ status: Server['status'] }>`
   }
 `;
 
-export const PerformanceInfo = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin: 1rem 0;
-`;
-
-export const MetricBox = styled.div`
-  padding: 0.75rem;
-  background: #f8f9fa;
+export const ServerImage = styled.div<{ url: string }>`
+  width: 100%;
+  height: 200px;
+  background-image: url(${props => props.url});
+  background-size: cover;
+  background-position: center;
   border-radius: 8px;
-  text-align: center;
-  transition: all 0.3s ease;
+  margin: 1rem 0;
+  transition: transform 0.3s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: scale(1.02);
   }
-`;
-
-export const MetricLabel = styled.div`
-  font-size: 0.75rem;
-  color: #666;
-  margin-bottom: 0.25rem;
-`;
-
-export const MetricValue = styled.div`
-  font-size: 1.1rem;
-  color: #856fab;
-  font-weight: bold;
 `;
 
 export const ServerDetails = styled.div`
@@ -126,14 +108,5 @@ export const ProgressBar = styled.div<{ value: number }>`
       return '#e9cdd8';
     }};
     transition: width 0.3s ease;
-    
-    animation: ${shimmer} 2s linear infinite;
-    background-image: linear-gradient(
-      to right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.2) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    background-size: 1000px 100%;
   }
 `;

@@ -15,7 +15,7 @@ export const ServerSelection = () => {
   const [compareServer, setCompareServer] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'latency' | 'load' | 'players'>('latency');
+  const [sortBy, setSortBy] = useState<'players' | 'name'>('players');
   const [showComparison, setShowComparison] = useState(false);
 
   const filteredAndSortedServers = useMemo(() => {
@@ -28,12 +28,10 @@ export const ServerSelection = () => {
 
     return filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'latency':
-          return a.performance.latency - b.performance.latency;
-        case 'load':
-          return a.performance.load - b.performance.load;
         case 'players':
-          return (b.players?.current || 0) - (a.players?.current || 0);
+          return ((b.players?.current || 0) - (a.players?.current || 0));
+        case 'name':
+          return a.name.localeCompare(b.name);
         default:
           return 0;
       }
@@ -75,17 +73,7 @@ export const ServerSelection = () => {
         </D.StatusBadge>
       </D.ServerHeader>
 
-      <D.PerformanceInfo>
-        <D.MetricBox>
-          <D.MetricLabel>レイテンシー</D.MetricLabel>
-          <D.MetricValue>{server.performance.latency}ms</D.MetricValue>
-        </D.MetricBox>
-        <D.MetricBox>
-          <D.MetricLabel>サーバー負荷</D.MetricLabel>
-          <D.MetricValue>{server.performance.load}%</D.MetricValue>
-          <D.ProgressBar value={server.performance.load} />
-        </D.MetricBox>
-      </D.PerformanceInfo>
+      <D.ServerImage url={server.image} />
 
       {server.players && (
         <D.ServerDetails>
@@ -149,11 +137,10 @@ export const ServerSelection = () => {
 
         <S.SortSelect
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as 'latency' | 'load' | 'players')}
+          onChange={(e) => setSortBy(e.target.value as 'players' | 'name')}
         >
-          <option value="latency">レイテンシー順</option>
-          <option value="load">サーバー負荷順</option>
           <option value="players">プレイヤー数順</option>
+          <option value="name">名前順</option>
         </S.SortSelect>
 
         {selectedServer && !showComparison && (
