@@ -1,310 +1,56 @@
-import styled, { keyframes } from 'styled-components';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Server, mockServers } from '../types/server';
+import * as S from '../styles/components';
+import * as D from '../styles/serverDetails';
 
-interface Server {
-  id: string;
-  name: string;
-  region: string;
-  performance: {
-    latency: number;
-    load: number;
-  };
-  status: 'online' | 'busy' | 'maintenance';
-  players?: {
-    current: number;
-    max: number;
-  };
-  details?: {
-    version: string;
-    location: string;
-    description: string;
-  };
-}
-
-const mockServers: Server[] = [
-  {
-    id: 'ap-1',
-    name: 'Asia Pacific - Tokyo',
-    region: 'asia-pacific',
-    performance: { latency: 15, load: 65 },
-    status: 'online',
-    players: { current: 1250, max: 2000 },
-    details: {
-      version: '1.0.2',
-      location: '東京',
-      description: '安定した低レイテンシーのプレミアムサーバー'
-    }
-  },
-  {
-    id: 'us-1',
-    name: 'North America - Oregon',
-    region: 'north-america',
-    performance: { latency: 120, load: 45 },
-    status: 'online',
-    players: { current: 850, max: 2000 },
-    details: {
-      version: '1.0.2',
-      location: 'オレゴン',
-      description: '北米地域の中核サーバー'
-    }
-  },
-  {
-    id: 'eu-1',
-    name: 'Europe - Frankfurt',
-    region: 'europe',
-    performance: { latency: 150, load: 70 },
-    status: 'busy',
-    players: { current: 1800, max: 2000 },
-    details: {
-      version: '1.0.2',
-      location: 'フランクフルト',
-      description: 'ヨーロッパの主要ハブサーバー'
-    }
-  },
-  {
-    id: 'ap-2',
-    name: 'Asia Pacific - Singapore',
-    region: 'asia-pacific',
-    performance: { latency: 45, load: 80 },
-    status: 'maintenance',
-    players: { current: 0, max: 2000 },
-    details: {
-      version: '1.0.1',
-      location: 'シンガポール',
-      description: '東南アジア地域のゲートウェイ'
-    }
-  }
-];
-
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const Container = styled.div`
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  animation: ${fadeIn} 0.6s ease-out;
-`;
-
-const Header = styled.div`
-  margin-bottom: 2rem;
-  text-align: center;
-`;
-
-const Title = styled.h1`
-  color: #856fab;
-  margin-bottom: 1rem;
-  font-size: 2.5rem;
-`;
-
-const SubTitle = styled.p`
-  color: #666;
-  font-size: 1.1rem;
-`;
-
-const Filters = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  justify-content: center;
-`;
-
-const FilterButton = styled.button<{ active: boolean }>`
-  padding: 0.5rem 1rem;
-  border: 2px solid ${props => props.active ? '#856fab' : '#b2dbe9'};
-  background: ${props => props.active ? '#856fab' : 'transparent'};
-  color: ${props => props.active ? '#fff' : '#856fab'};
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const ServerList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1rem;
-`;
-
-const ServerCard = styled.div<{ selected: boolean }>`
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: ${props => props.selected ? '#cec8ef' : '#fff'};
-  border: 2px solid ${props => props.selected ? '#856fab' : '#b2dbe9'};
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    border-color: #856fab;
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const ServerHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const ServerName = styled.h3`
-  color: #856fab;
-  margin: 0;
-  font-size: 1.2rem;
-`;
-
-const StatusBadge = styled.span<{ status: Server['status'] }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  background: ${props => {
-    switch (props.status) {
-      case 'online': return '#b2dbe9';
-      case 'busy': return '#ffcba5';
-      case 'maintenance': return '#e9cdd8';
-      default: return '#cec8ef';
-    }
-  }};
-  color: #856fab;
-  font-weight: 600;
-`;
-
-const PerformanceInfo = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin: 1rem 0;
-`;
-
-const MetricBox = styled.div`
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  text-align: center;
-`;
-
-const MetricLabel = styled.div`
-  font-size: 0.75rem;
-  color: #666;
-  margin-bottom: 0.25rem;
-`;
-
-const MetricValue = styled.div`
-  font-size: 1.1rem;
-  color: #856fab;
-  font-weight: bold;
-`;
-
-const ServerDetails = styled.div`
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-`;
-
-const DetailRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-`;
-
-const DetailLabel = styled.span`
-  color: #666;
-`;
-
-const DetailValue = styled.span`
-  color: #856fab;
-  font-weight: 500;
-`;
-
-const ProgressBar = styled.div<{ value: number }>`
-  width: 100%;
-  height: 6px;
-  background: #e9ecef;
-  border-radius: 3px;
-  margin-top: 0.5rem;
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: ${props => props.value}%;
-    background: ${props => {
-      if (props.value < 50) return '#b2dbe9';
-      if (props.value < 80) return '#ffcba5';
-      return '#e9cdd8';
-    }};
-    transition: width 0.3s ease;
-  }
-`;
-
-const ConnectButton = styled.button`
-  display: block;
-  width: 100%;
-  padding: 1rem;
-  margin-top: 2rem;
-  background: #856fab;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-
-  &:hover:not(:disabled) {
-    background: #7a5fa0;
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  &:disabled {
-    background: #cec8ef;
-    cursor: not-allowed;
-  }
-`;
+const regionNames = {
+  'all': 'すべての地域',
+  'asia-pacific': 'アジア太平洋',
+  'north-america': '北米',
+  'europe': 'ヨーロッパ'
+} as const;
 
 export const ServerSelection = () => {
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
+  const [compareServer, setCompareServer] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'latency' | 'load' | 'players'>('latency');
+  const [showComparison, setShowComparison] = useState(false);
 
-  const regions = ['all', 'asia-pacific', 'north-america', 'europe'];
-  const regionNames = {
-    'all': 'すべての地域',
-    'asia-pacific': 'アジア太平洋',
-    'north-america': '北米',
-    'europe': 'ヨーロッパ'
-  };
+  const filteredAndSortedServers = useMemo(() => {
+    let filtered = mockServers.filter(server => 
+      (selectedRegion === 'all' || server.region === selectedRegion) &&
+      (searchTerm === '' || 
+        server.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        server.details?.location.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
-  const filteredServers = mockServers.filter(server => 
-    selectedRegion === 'all' || server.region === selectedRegion
-  );
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'latency':
+          return a.performance.latency - b.performance.latency;
+        case 'load':
+          return a.performance.load - b.performance.load;
+        case 'players':
+          return (b.players?.current || 0) - (a.players?.current || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [selectedRegion, searchTerm, sortBy]);
 
   const handleServerSelect = (serverId: string) => {
-    setSelectedServer(serverId);
+    if (showComparison && !compareServer) {
+      setCompareServer(serverId);
+    } else {
+      setSelectedServer(serverId);
+    }
+  };
+
+  const handleCompare = () => {
+    setShowComparison(true);
+    setCompareServer(null);
   };
 
   const handleConnect = () => {
@@ -314,90 +60,133 @@ export const ServerSelection = () => {
     }
   };
 
+  const renderServerCard = (server: Server, isComparison = false) => (
+    <S.ServerCard
+      key={server.id}
+      selected={server.id === selectedServer || server.id === compareServer}
+      recommended={server.recommended}
+      onClick={isComparison ? undefined : () => handleServerSelect(server.id)}
+    >
+      <D.ServerHeader>
+        <D.ServerName>{server.name}</D.ServerName>
+        <D.StatusBadge status={server.status}>
+          {server.status === 'online' ? 'オンライン' :
+           server.status === 'busy' ? '混雑中' : 'メンテナンス中'}
+        </D.StatusBadge>
+      </D.ServerHeader>
+
+      <D.PerformanceInfo>
+        <D.MetricBox>
+          <D.MetricLabel>レイテンシー</D.MetricLabel>
+          <D.MetricValue>{server.performance.latency}ms</D.MetricValue>
+        </D.MetricBox>
+        <D.MetricBox>
+          <D.MetricLabel>サーバー負荷</D.MetricLabel>
+          <D.MetricValue>{server.performance.load}%</D.MetricValue>
+          <D.ProgressBar value={server.performance.load} />
+        </D.MetricBox>
+      </D.PerformanceInfo>
+
+      {server.players && (
+        <D.ServerDetails>
+          <D.DetailRow>
+            <D.DetailLabel>プレイヤー数</D.DetailLabel>
+            <D.DetailValue>{server.players.current} / {server.players.max}</D.DetailValue>
+          </D.DetailRow>
+          <D.ProgressBar value={(server.players.current / server.players.max) * 100} />
+        </D.ServerDetails>
+      )}
+
+      {server.details && (
+        <D.ServerDetails>
+          <D.DetailRow>
+            <D.DetailLabel>バージョン</D.DetailLabel>
+            <D.DetailValue>{server.details.version}</D.DetailValue>
+          </D.DetailRow>
+          <D.DetailRow>
+            <D.DetailLabel>ロケーション</D.DetailLabel>
+            <D.DetailValue>{server.details.location}</D.DetailValue>
+          </D.DetailRow>
+          <D.DetailRow>
+            <D.DetailLabel>説明</D.DetailLabel>
+          </D.DetailRow>
+          <D.DetailValue style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
+            {server.details.description}
+          </D.DetailValue>
+        </D.ServerDetails>
+      )}
+    </S.ServerCard>
+  );
+
+  const selectedServerData = mockServers.find(s => s.id === selectedServer);
+  const compareServerData = mockServers.find(s => s.id === compareServer);
+
   return (
-    <Container>
-      <Header>
-        <Title>ワールドサーバーを選択</Title>
-        <SubTitle>最適なサーバーを選んでプレイを開始</SubTitle>
-      </Header>
+    <S.Container>
+      <S.Header>
+        <S.Title>ワールドサーバーを選択</S.Title>
+        <S.SubTitle>最適なサーバーを選んでプレイを開始</S.SubTitle>
+      </S.Header>
 
-      <Filters>
-        {regions.map(region => (
-          <FilterButton
-            key={region}
-            active={selectedRegion === region}
-            onClick={() => setSelectedRegion(region)}
-          >
-            {regionNames[region as keyof typeof regionNames]}
-          </FilterButton>
-        ))}
-      </Filters>
+      <S.ControlPanel>
+        <S.Filters>
+          {Object.entries(regionNames).map(([region, name]) => (
+            <S.FilterButton
+              key={region}
+              active={selectedRegion === region}
+              onClick={() => setSelectedRegion(region)}
+            >
+              {name}
+            </S.FilterButton>
+          ))}
+        </S.Filters>
 
-      <ServerList>
-        {filteredServers.map(server => (
-          <ServerCard
-            key={server.id}
-            selected={selectedServer === server.id}
-            onClick={() => handleServerSelect(server.id)}
-          >
-            <ServerHeader>
-              <ServerName>{server.name}</ServerName>
-              <StatusBadge status={server.status}>
-                {server.status === 'online' ? 'オンライン' :
-                 server.status === 'busy' ? '混雑中' : 'メンテナンス中'}
-              </StatusBadge>
-            </ServerHeader>
+        <S.SearchInput
+          placeholder="サーバーを検索..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
-            <PerformanceInfo>
-              <MetricBox>
-                <MetricLabel>レイテンシー</MetricLabel>
-                <MetricValue>{server.performance.latency}ms</MetricValue>
-              </MetricBox>
-              <MetricBox>
-                <MetricLabel>サーバー負荷</MetricLabel>
-                <MetricValue>{server.performance.load}%</MetricValue>
-                <ProgressBar value={server.performance.load} />
-              </MetricBox>
-            </PerformanceInfo>
+        <S.SortSelect
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as 'latency' | 'load' | 'players')}
+        >
+          <option value="latency">レイテンシー順</option>
+          <option value="load">サーバー負荷順</option>
+          <option value="players">プレイヤー数順</option>
+        </S.SortSelect>
 
-            {server.players && (
-              <ServerDetails>
-                <DetailRow>
-                  <DetailLabel>プレイヤー数</DetailLabel>
-                  <DetailValue>{server.players.current} / {server.players.max}</DetailValue>
-                </DetailRow>
-                <ProgressBar value={(server.players.current / server.players.max) * 100} />
-              </ServerDetails>
-            )}
+        {selectedServer && !showComparison && (
+          <S.CompareButton onClick={handleCompare}>
+            他のサーバーと比較
+          </S.CompareButton>
+        )}
+      </S.ControlPanel>
 
-            {server.details && (
-              <ServerDetails>
-                <DetailRow>
-                  <DetailLabel>バージョン</DetailLabel>
-                  <DetailValue>{server.details.version}</DetailValue>
-                </DetailRow>
-                <DetailRow>
-                  <DetailLabel>ロケーション</DetailLabel>
-                  <DetailValue>{server.details.location}</DetailValue>
-                </DetailRow>
-                <DetailRow>
-                  <DetailLabel>説明</DetailLabel>
-                </DetailRow>
-                <DetailValue style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>
-                  {server.details.description}
-                </DetailValue>
-              </ServerDetails>
-            )}
-          </ServerCard>
-        ))}
-      </ServerList>
+      {showComparison && selectedServerData ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          {renderServerCard(selectedServerData, true)}
+          {compareServerData ? 
+            renderServerCard(compareServerData, true) :
+            <S.ServerCard selected={false}>
+              <D.ServerHeader>
+                <D.ServerName>比較するサーバーを選択</D.ServerName>
+              </D.ServerHeader>
+            </S.ServerCard>
+          }
+        </div>
+      ) : (
+        <S.ServerList>
+          {filteredAndSortedServers.map(server => renderServerCard(server))}
+        </S.ServerList>
+      )}
 
-      <ConnectButton
+      <S.ConnectButton
         disabled={!selectedServer}
         onClick={handleConnect}
       >
         サーバーに接続
-      </ConnectButton>
-    </Container>
+      </S.ConnectButton>
+    </S.Container>
   );
 };
